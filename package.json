@@ -1,0 +1,20 @@
+{
+  "name": "korean-word-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot that sends daily random Korean words with translations",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "telegraf": "^4.15.3",
+    "node-schedule": "^2.1.1",
+    "dotenv": "^16.3.1",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

@@ -1,0 +1,148 @@
+const userService = require('../services/userService');
+const wordService = require('../services/wordService');
+const { formatWordMessage } = require('./messageHandler');
+
+/**
+ * Register all command handlers
+ * @param {import('telegraf').Telegraf} bot - The Telegraf bot instance
+ */
+function register(bot) {
+  // Start command
+  bot.start(async (ctx) => {
+    const userId = ctx.from.id;
+    const chatId = ctx.chat.id;
+    const username = ctx.from.username || `${ctx.from.first_name} ${ctx.from.last_name || ''}`.trim();
+    
+    await userService.registerUser(chatId, userId, username);
+    
+    ctx.reply(
+      `안녕하세요! 👋 Добро пожаловать в Korean Word Bot!\n\n` +
+      `Я буду отправлять вам новое корейское слово каждый день, чтобы помочь вам учить язык.\n\n` +
+      `Команды:\n` +
+      `/word - Получить случайное корейское слово\n` +
+      `/level - Установить уровень сложности (базовый, средний, продвинутый)\n` +
+      `/stats - Посмотреть статистику обучения\n` +
+      `/subscribe - Подписаться на ежедневные слова\n` +
+      `/unsubscribe - Отписаться от ежедневных слов\n`
+    );
+  });
+
+  // Help command
+  bot.help((ctx) => {
+    ctx.reply(
+      `🇰🇷 Korean Word Bot Помощь 🇰🇷\n\n` +
+      `Команды:\n` +
+      `/start - Запустить бота\n` +
+      `/word - Получить случайное корейское слово\n` +
+      `/level - Установить уровень сложности (базовый, средний, продвинутый)\n` +
+      `/stats - Посмотреть статистику обучения\n` +
+      `/subscribe - Подписаться на ежедневные слова\n` +
+      `/unsubscribe - Отписаться от ежедневных слов\n`
+    );
+  });
+
+  // Get random word command
+  bot.command('word', async (ctx) => {
+    try {
+      const chatId = ctx.chat.id;
+      const user = await userService.getUser(chatId);
+      const word = await wordService.getRandomWord(user?.level || 'basic');
+      
+      await ctx.reply(formatWordMessage(word));
+      await userService.updateWordSent(chatId, word.id);
+    } catch (err) {
+      console.error('Error sending random word:', err);
+      ctx.reply('Извините, я не смог получить слово. Пожалуйста, попробуйте позже.');
+    }
+  });
+
+  // Level selection command
+  bot.command('level', (ctx) => {
+    ctx.reply(
+      'Выберите уровень корейской лексики:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'Базовый', callback_data: 'level:basic' },
+              { text: 'Средний', callback_data: 'level:intermediate' },
+              { text: 'Продвинутый', callback_data: 'level:advanced' }
+            ]
+          ]
+        }
+      }
+    );
+  });
+
+  // Subscribe command
+  bot.command('subscribe', async (ctx) => {
+    try {
+      const chatId = ctx.chat.id;
+      await userService.updateSubscription(chatId, true);
+      ctx.reply('Вы успешно подписались на ежедневные корейские слова! 🎉');
+    } catch (err) {
+      console.error('Error subscribing user:', err);
+      ctx.reply('Извините, произошла ошибка. Пожалуйста, попробуйте позже.');
+    }
+  });
+
+  // Unsubscribe command
+  bot.command('unsubscribe', async (ctx) => {
+    try {
+      const chatId = ctx.chat.id;
+      await userService.updateSubscription(chatId, false);
+      ctx.reply('Вы отписались от ежедневных корейских слов. Вы можете подписаться снова в любое время с помощью /subscribe.');
+    } catch (err) {
+      console.error('Error unsubscribing user:', err);
+      ctx.reply('Извините, произошла ошибка. Пожалуйста, попробуйте позже.');
+    }
+  });
+
+  // Stats command
+  bot.command('stats', async (ctx) => {
+    try {
+      const chatId = ctx.chat.id;
+      const stats = await userService.getUserStats(chatId);
+      
+      const levelText = stats.level === 'basic' ? 'базовый' : 
+                       stats.level === 'intermediate' ? 'средний' : 
+                       'продвинутый';
+      
+      ctx.reply(
+        `📊 Ваша статистика изучения корейского:\n\n` +
+        `Выучено слов: ${stats.wordsLearned}\n` +
+        `Текущий уровень: ${levelText}\n` +
+        `Дней подписки: ${stats.daysSubscribed}\n` +
+        `Серия: ${stats.streak} дней\n`
+      );
+    } catch (err) {
+      console.error('Error getting user stats:', err);
+      ctx.reply('Извините, я не смог получить вашу статистику.');
+    }
+  });
+
+  // Handle level selection
+  bot.action(/level:(.+)/, async (ctx) => {
+    try {
+      const chatId = ctx.chat.id;
+      const level = ctx.match[1];
+      
+      if (['basic', 'intermediate', 'advanced'].includes(level)) {
+        await userService.updateUserLevel(chatId, level);
+        const levelText = level === 'basic' ? 'базовый' : 
+                         level === 'intermediate' ? 'средний' : 
+                         'продвинутый';
+        ctx.reply(`Ваш уровень установлен на: ${levelText}`);
+      } else {
+        ctx.reply('Неверный уровень. Пожалуйста, выберите базовый, средний или продвинутый.');
+      }
+    } catch (err) {
+      console.error('Error updating user level:', err);
+      ctx.reply('Извините, произошла ошибка. Пожалуйста, попробуйте позже.');
+    }
+  });
+}
+
+module.exports = {
+  register
+};
