@@ -1,5 +1,4 @@
 // Korean words database
-// In a production environment, this would use a real database
 const words = [
   {
     id: '1',
@@ -101,7 +100,6 @@ const words = [
     category: 'Глагол',
     level: 'basic'
   },
-  // Intermediate level words
   {
     id: '11',
     korean: '후회',
@@ -152,7 +150,6 @@ const words = [
     category: 'Глагол',
     level: 'intermediate'
   },
-  // Advanced level words
   {
     id: '16',
     korean: '유지하다',
@@ -202,20 +199,123 @@ const words = [
     exampleTranslation: 'Потребовалось время, чтобы реализовать новую технологию.',
     category: 'Глагол',
     level: 'advanced'
+  },
+  {
+    id: '21',
+    korean: '책상',
+    romanization: 'chaeksang',
+    russian: 'Стол',
+    example: '책상 위에 책이 있어요.',
+    exampleTranslation: 'На столе есть книга.',
+    category: 'Мебель',
+    level: 'basic'
+  },
+  {
+    id: '22',
+    korean: '의자',
+    romanization: 'uija',
+    russian: 'Стул',
+    example: '의자에 앉으세요.',
+    exampleTranslation: 'Садитесь на стул.',
+    category: 'Мебель',
+    level: 'basic'
+  },
+  {
+    id: '23',
+    korean: '창문',
+    romanization: 'changmun',
+    russian: 'Окно',
+    example: '창문을 열어주세요.',
+    exampleTranslation: 'Откройте, пожалуйста, окно.',
+    category: 'Дом',
+    level: 'basic'
+  },
+  {
+    id: '24',
+    korean: '문',
+    romanization: 'mun',
+    russian: 'Дверь',
+    example: '문을 닫아주세요.',
+    exampleTranslation: 'Закройте, пожалуйста, дверь.',
+    category: 'Дом',
+    level: 'basic'
+  },
+  {
+    id: '25',
+    korean: '컴퓨터',
+    romanization: 'keompyuteo',
+    russian: 'Компьютер',
+    example: '컴퓨터로 일해요.',
+    exampleTranslation: 'Я работаю на компьютере.',
+    category: 'Технологии',
+    level: 'basic'
+  },
+  {
+    id: '26',
+    korean: '전화',
+    romanization: 'jeonhwa',
+    russian: 'Телефон',
+    example: '전화 주세요.',
+    exampleTranslation: 'Позвоните мне.',
+    category: 'Технологии',
+    level: 'basic'
+  },
+  {
+    id: '27',
+    korean: '병원',
+    romanization: 'byeongwon',
+    russian: 'Больница',
+    example: '병원에 가야 해요.',
+    exampleTranslation: 'Нужно идти в больницу.',
+    category: 'Места',
+    level: 'basic'
+  },
+  {
+    id: '28',
+    korean: '약국',
+    romanization: 'yakguk',
+    russian: 'Аптека',
+    example: '약국이 어디에 있어요?',
+    exampleTranslation: 'Где находится аптека?',
+    category: 'Места',
+    level: 'basic'
+  },
+  {
+    id: '29',
+    korean: '은행',
+    romanization: 'eunhaeng',
+    russian: 'Банк',
+    example: '은행에서 돈을 찾아요.',
+    exampleTranslation: 'Я снимаю деньги в банке.',
+    category: 'Места',
+    level: 'basic'
+  },
+  {
+    id: '30',
+    korean: '시장',
+    romanization: 'sijang',
+    russian: 'Рынок',
+    example: '시장에서 과일을 사요.',
+    exampleTranslation: 'Я покупаю фрукты на рынке.',
+    category: 'Места',
+    level: 'basic'
+  },
+  {
+    id: '100',
+    korean: '성취',
+    romanization: 'seongchwi',
+    russian: 'Достижение',
+    example: '큰 성취를 이루었어요.',
+    exampleTranslation: 'Я достиг большого успеха.',
+    category: 'Абстрактное',
+    level: 'advanced'
   }
 ];
 
-/**
- * Get a random word by level
- * @param {string} level - Word level (basic, intermediate, advanced)
- * @returns {Object} Random word
- */
 async function getRandomWord(level = 'basic') {
-  // Filter words by level
   const levelWords = words.filter(word => {
     if (level === 'basic') return word.level === 'basic';
     if (level === 'intermediate') return ['basic', 'intermediate'].includes(word.level);
-    // If advanced, include all levels
     return true;
   });
   
@@ -223,24 +323,14 @@ async function getRandomWord(level = 'basic') {
     throw new Error('No words found for the specified level');
   }
   
-  // Get random word
   const randomIndex = Math.floor(Math.random() * levelWords.length);
   return levelWords[randomIndex];
 }
 
-/**
- * Get word by ID
- * @param {string} id - Word ID
- * @returns {Object|null} Word or null if not found
- */
 async function getWordById(id) {
   return words.find(word => word.id === id) || null;
 }
 
-/**
- * Get all words
- * @returns {Array} All words
- */
 async function getAllWords() {
   return words;
 }
