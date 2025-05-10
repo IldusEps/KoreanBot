@@ -22,6 +22,26 @@ function formatWordMessage(word, options = {}) {
 }
 
 /**
+ * Formats a grammar card into a beautiful message
+ * @param {Object} grammar - The grammar object
+ * @param {Object} options - Message options
+ * @returns {String} Formatted message
+ */
+function formatGrammarMessage(grammar, options = {}) {
+  const { isDaily = false } = options;
+  
+  const header = isDaily 
+    ? '📚 Грамматика дня 오늘의 문법 📚'
+    : '📚 Грамматика 한국어 문법 📚';
+  
+  return `${header}\n\n` +
+    `*${grammar.title}*\n\n` +
+    `📝 *Объяснение*:\n${grammar.explanation}\n\n` +
+    `✏️ *Пример*: ${grammar.example}\n` +
+    `🔍 *Перевод*: ${grammar.exampleTranslation}`;
+}
+
+/**
  * Register message handlers
  * @param {import('telegraf').Telegraf} bot - The Telegraf bot instance
  */
@@ -33,6 +53,7 @@ function register(bot) {
       ctx.reply(
         'Я помогу вам учить корейские слова! Попробуйте эти команды:\n' +
         '/word - Получить случайное слово\n' +
+        '/grammar - Получить карточку с грамматикой\n' +
         '/help - Посмотреть все доступные команды'
       );
     }
@@ -41,5 +62,6 @@ function register(bot) {
 
 module.exports = {
   formatWordMessage,
+  formatGrammarMessage,
   register
 };
