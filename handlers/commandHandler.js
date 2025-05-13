@@ -21,7 +21,7 @@ function register(bot) {
       `Я буду отправлять вам новое корейское слово каждый день, чтобы помочь вам учить язык.\n\n` +
       `Команды:\n` +
       `/word - Получить случайное корейское слово\n` +
-      `/grammar - Получить карточку с грамматикой\n` +
+      `/grammar - Изучить грамматику корейского языка\n` +
       `/level - Установить уровень сложности (базовый, средний, продвинутый)\n` +
       `/stats - Посмотреть статистику обучения\n` +
       `/subscribe - Подписаться на ежедневные слова и грамматику\n` +
@@ -36,7 +36,7 @@ function register(bot) {
       `Команды:\n` +
       `/start - Запустить бота\n` +
       `/word - Получить случайное корейское слово\n` +
-      `/grammar - Получить карточку с грамматикой\n` +
+      `/grammar - Изучить грамматику корейского языка\n` +
       `/level - Установить уровень сложности (базовый, средний, продвинутый)\n` +
       `/stats - Посмотреть статистику обучения\n` +
       `/subscribe - Подписаться на ежедневные слова и грамматику\n` +
@@ -59,14 +59,67 @@ function register(bot) {
     }
   });
 
-  // Get grammar card command
+  // Grammar command - show level selection
   bot.command('grammar', async (ctx) => {
+    ctx.reply(
+      'Выберите уровень грамматики:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'A1 (Начальный)', callback_data: 'grammar_level:A1' },
+              { text: 'A2 (Базовый)', callback_data: 'grammar_level:A2' }
+            ],
+            [
+              { text: 'B1 (Средний)', callback_data: 'grammar_level:B1' },
+              { text: 'B2 (Выше среднего)', callback_data: 'grammar_level:B2' }
+            ]
+          ]
+        }
+      }
+    );
+  });
+
+  // Handle grammar level selection
+  bot.action(/grammar_level:(.+)/, async (ctx) => {
+    const level = ctx.match[1];
+    const grammarPoints = await grammarService.getGrammarByLevel(level);
+    
+    const buttons = grammarPoints.map(g => ({
+      text: g.title,
+      callback_data: `grammar:${g.id}`
+    }));
+
+    // Create rows of 2 buttons each
+    const keyboard = [];
+    for (let i = 0; i < buttons.length; i += 2) {
+      keyboard.push(buttons.slice(i, i + 2));
+    }
+
+    ctx.reply(
+      `Выберите грамматическую конструкцию уровня ${level}:`,
+      {
+        reply_markup: {
+          inline_keyboard: keyboard
+        }
+      }
+    );
+  });
+
+  // Handle specific grammar selection
+  bot.action(/grammar:(\d+)/, async (ctx) => {
     try {
-      const grammar = await grammarService.getRandomGrammar();
-      await ctx.reply(formatGrammarMessage(grammar));
+      const grammarId = ctx.match[1];
+      const grammar = await grammarService.getGrammarById(grammarId);
+      
+      if (grammar) {
+        await ctx.reply(formatGrammarMessage(grammar));
+      } else {
+        ctx.reply('Извините, грамматическая конструкция не найдена.');
+      }
     } catch (err) {
       console.error('Error sending grammar card:', err);
-      ctx.reply('Извините, я не смог получить грамматическую карточку. Пожалуйста, попробуйте позже.');
+      ctx.reply('Извините, произошла ошибка. Пожалуйста, попробуйте позже.');
     }
   });
 
