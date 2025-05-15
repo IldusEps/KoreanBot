@@ -18,7 +18,6 @@ function formatWordMessage(word, options = {}) {
     `🔍 *Пример*: ${word.example}\n` +
     `${word.exampleTranslation ? `🔍 *Перевод*: ${word.exampleTranslation}\n` : ''}`;
 
-  // Add other forms if available
   if (word.otherForms) {
     message += '\n📝 *Другие формы*:\n';
     for (const [form, value] of Object.entries(word.otherForms)) {
@@ -26,7 +25,6 @@ function formatWordMessage(word, options = {}) {
     }
   }
 
-  // Add usage examples if available
   if (word.usage && word.usage.length > 0) {
     message += '\n💡 *Использование*:\n';
     word.usage.forEach(use => {
@@ -58,7 +56,8 @@ function formatGrammarMessage(grammar, options = {}) {
     `*${grammar.title}*\n\n` +
     `📝 *Объяснение*:\n${grammar.explanation}\n\n` +
     `✏️ *Пример*: ${grammar.example}\n` +
-    `🔍 *Перевод*: ${grammar.exampleTranslation}`;
+    `🔍 *Перевод*: ${grammar.exampleTranslation}\n` +
+    `📊 *Уровень*: ${grammar.level}`;
 }
 
 /**
@@ -72,8 +71,8 @@ function register(bot) {
     if (!ctx.message.text.startsWith('/')) {
       ctx.reply(
         'Я помогу вам учить корейские слова! Попробуйте эти команды:\n' +
-        '/word - Получить случайное слово\n' +
-        '/grammar - Получить карточку с грамматикой\n' +
+        '/word - Изучать корейские слова\n' +
+        '/grammar - Изучать грамматику корейского языка\n' +
         '/help - Посмотреть все доступные команды'
       );
     }

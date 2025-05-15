@@ -1,8 +1,12 @@
 const userService = require('../services/userService');
-const wordService = require('./services/wordService');
-const grammarService = require('./services/grammarService');
-const { formatWordMessage, formatGrammarMessage } = require('./handlers/messageHandler');
+const wordService = require('../services/wordService');
+const grammarService = require('../services/grammarService');
+const { formatWordMessage, formatGrammarMessage } = require('./messageHandler');
 
+/**
+ * Register all command handlers
+ * @param {import('telegraf').Telegraf} bot - The Telegraf bot instance
+ */
 function register(bot) {
   // Start command
   bot.start(async (ctx) => {
@@ -16,9 +20,9 @@ function register(bot) {
       `안녕하세요! 👋 Добро пожаловать в Korean Word Bot!\n\n` +
       `Я буду отправлять вам новое корейское слово каждый день, чтобы помочь вам учить язык.\n\n` +
       `Команды:\n` +
-      `/word - Получить случайное корейское слово\n` +
-      `/grammar - Изучить грамматику корейского языка\n` +
-      `/level - Установить уровень сложности (базовый, средний, продвинутый)\n` +
+      `/word - Изучать корейские слова\n` +
+      `/grammar - Изучать грамматику корейского языка\n` +
+      `/level - Установить уровень сложности (A1, A2, B1, B2)\n` +
       `/stats - Посмотреть статистику обучения\n` +
       `/subscribe - Подписаться на ежедневные слова и грамматику\n` +
       `/unsubscribe - Отписаться от ежедневных слов и грамматики\n`
@@ -31,9 +35,9 @@ function register(bot) {
       `🇰🇷 Korean Word Bot Помощь 🇰🇷\n\n` +
       `Команды:\n` +
       `/start - Запустить бота\n` +
-      `/word - Получить случайное корейское слово\n` +
-      `/grammar - Изучить грамматику корейского языка\n` +
-      `/level - Установить уровень сложности (базовый, средний, продвинутый)\n` +
+      `/word - Изучать корейские слова\n` +
+      `/grammar - Изучать грамматику корейского языка\n` +
+      `/level - Установить уровень сложности (A1, A2, B1, B2)\n` +
       `/stats - Посмотреть статистику обучения\n` +
       `/subscribe - Подписаться на ежедневные слова и грамматику\n` +
       `/unsubscribe - Отписаться от ежедневных слов и грамматики\n`
@@ -66,7 +70,6 @@ function register(bot) {
     const level = ctx.match[1];
     const topics = await wordService.getTopicsByLevel(level);
     
-    // Create rows of 2 buttons each
     const keyboard = [];
     for (let i = 0; i < topics.length; i += 2) {
       keyboard.push(
@@ -93,7 +96,6 @@ function register(bot) {
     const topic = ctx.match[2];
     const words = await wordService.getWordsByTopic(topic);
     
-    // Create rows of 2 buttons each
     const keyboard = [];
     for (let i = 0; i < words.length; i += 2) {
       keyboard.push(
@@ -163,7 +165,6 @@ function register(bot) {
       callback_data: `grammar:${g.id}`
     }));
 
-    // Create rows of 2 buttons each
     const keyboard = [];
     for (let i = 0; i < buttons.length; i += 2) {
       keyboard.push(buttons.slice(i, i + 2));
@@ -199,14 +200,17 @@ function register(bot) {
   // Level selection command
   bot.command('level', (ctx) => {
     ctx.reply(
-      'Выберите уровень корейской лексики:',
+      'Выберите уровень корейского языка:',
       {
         reply_markup: {
           inline_keyboard: [
             [
-              { text: 'Базовый', callback_data: 'level:basic' },
-              { text: 'Средний', callback_data: 'level:intermediate' },
-              { text: 'Продвинутый', callback_data: 'level:advanced' }
+              { text: 'A1 (Начальный)', callback_data: 'level:A1' },
+              { text: 'A2 (Базовый)', callback_data: 'level:A2' }
+            ],
+            [
+              { text: 'B1 (Средний)', callback_data: 'level:B1' },
+              { text: 'B2 (Выше среднего)', callback_data: 'level:B2' }
             ]
           ]
         }
@@ -244,14 +248,10 @@ function register(bot) {
       const chatId = ctx.chat.id;
       const stats = await userService.getUserStats(chatId);
       
-      const levelText = stats.level === 'basic' ? 'базовый' : 
-                       stats.level === 'intermediate' ? 'средний' : 
-                       'продвинутый';
-      
       ctx.reply(
         `📊 Ваша статистика изучения корейского:\n\n` +
         `Выучено слов: ${stats.wordsLearned}\n` +
-        `Текущий уровень: ${levelText}\n` +
+        `Текущий уровень: ${stats.level}\n` +
         `Дней подписки: ${stats.daysSubscribed}\n` +
         `Серия: ${stats.streak} дней\n`
       );
@@ -267,14 +267,11 @@ function register(bot) {
       const chatId = ctx.chat.id;
       const level = ctx.match[1];
       
-      if (['basic', 'intermediate', 'advanced'].includes(level)) {
+      if (['A1', 'A2', 'B1', 'B2'].includes(level)) {
         await userService.updateUserLevel(chatId, level);
-        const levelText = level === 'basic' ? 'базовый' : 
-                         level === 'intermediate' ? 'средний' : 
-                         'продвинутый';
-        ctx.reply(`Ваш уровень установлен на: ${levelText}`);
+        ctx.reply(`Ваш уровень установлен на: ${level}`);
       } else {
-        ctx.reply('Неверный уровень. Пожалуйста, выберите базовый, средний или продвинутый.');
+        ctx.reply('Неверный уровень. Пожалуйста, выберите A1, A2, B1 или B2.');
       }
     } catch (err) {
       console.error('Error updating user level:', err);
