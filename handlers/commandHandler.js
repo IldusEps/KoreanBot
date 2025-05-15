@@ -1,12 +1,8 @@
 const userService = require('../services/userService');
-const wordService = require('../services/wordService');
-const grammarService = require('../services/grammarService');
-const { formatWordMessage, formatGrammarMessage } = require('./messageHandler');
+const wordService = require('./services/wordService');
+const grammarService = require('./services/grammarService');
+const { formatWordMessage, formatGrammarMessage } = require('./handlers/messageHandler');
 
-/**
- * Register all command handlers
- * @param {import('telegraf').Telegraf} bot - The Telegraf bot instance
- */
 function register(bot) {
   // Start command
   bot.start(async (ctx) => {
@@ -44,18 +40,95 @@ function register(bot) {
     );
   });
 
-  // Get random word command
+  // Word command - show level selection
   bot.command('word', async (ctx) => {
+    ctx.reply(
+      'Выберите уровень корейских слов:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'A1 (Начальный)', callback_data: 'word_level:A1' },
+              { text: 'A2 (Базовый)', callback_data: 'word_level:A2' }
+            ],
+            [
+              { text: 'B1 (Средний)', callback_data: 'word_level:B1' },
+              { text: 'B2 (Выше среднего)', callback_data: 'word_level:B2' }
+            ]
+          ]
+        }
+      }
+    );
+  });
+
+  // Handle word level selection
+  bot.action(/word_level:(.+)/, async (ctx) => {
+    const level = ctx.match[1];
+    const topics = await wordService.getTopicsByLevel(level);
+    
+    // Create rows of 2 buttons each
+    const keyboard = [];
+    for (let i = 0; i < topics.length; i += 2) {
+      keyboard.push(
+        topics.slice(i, i + 2).map(topic => ({
+          text: topic,
+          callback_data: `word_topic:${level}:${topic}`
+        }))
+      );
+    }
+
+    ctx.reply(
+      `Выберите тему для изучения слов уровня ${level}:`,
+      {
+        reply_markup: {
+          inline_keyboard: keyboard
+        }
+      }
+    );
+  });
+
+  // Handle topic selection
+  bot.action(/word_topic:(.+):(.+)/, async (ctx) => {
+    const level = ctx.match[1];
+    const topic = ctx.match[2];
+    const words = await wordService.getWordsByTopic(topic);
+    
+    // Create rows of 2 buttons each
+    const keyboard = [];
+    for (let i = 0; i < words.length; i += 2) {
+      keyboard.push(
+        words.slice(i, i + 2).map(word => ({
+          text: word.korean,
+          callback_data: `word:${word.id}`
+        }))
+      );
+    }
+
+    ctx.reply(
+      `Выберите слово для изучения (тема: ${topic}, уровень: ${level}):`,
+      {
+        reply_markup: {
+          inline_keyboard: keyboard
+        }
+      }
+    );
+  });
+
+  // Handle specific word selection
+  bot.action(/word:(\d+)/, async (ctx) => {
     try {
-      const chatId = ctx.chat.id;
-      const user = await userService.getUser(chatId);
-      const word = await wordService.getRandomWord(user?.level || 'basic');
+      const wordId = ctx.match[1];
+      const word = await wordService.getWordById(wordId);
       
-      await ctx.reply(formatWordMessage(word));
-      await userService.updateWordSent(chatId, word.id);
+      if (word) {
+        await ctx.reply(formatWordMessage(word));
+        await userService.updateWordSent(ctx.chat.id, wordId);
+      } else {
+        ctx.reply('Извините, слово не найдено.');
+      }
     } catch (err) {
-      console.error('Error sending random word:', err);
-      ctx.reply('Извините, я не смог получить слово. Пожалуйста, попробуйте позже.');
+      console.error('Error sending word:', err);
+      ctx.reply('Извините, произошла ошибка. Пожалуйста, попробуйте позже.');
     }
   });
 

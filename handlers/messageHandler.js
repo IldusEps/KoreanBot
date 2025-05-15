@@ -11,14 +11,34 @@ function formatWordMessage(word, options = {}) {
     ? '🇰🇷 Корейское слово дня 오늘의 단어 🇰🇷'
     : '🇰🇷 Корейское слово 한국어 단어 🇰🇷';
   
-  return `${header}\n\n` +
+  let message = `${header}\n\n` +
     `*${word.korean}*\n` +
     `${word.romanization ? `(${word.romanization})\n\n` : '\n'}` +
     `🔤 *Значение*: ${word.russian}\n` +
-    `🔍 *Пример*: ${word.example || 'N/A'}\n` +
-    `${word.exampleTranslation ? `🔍 *Перевод*: ${word.exampleTranslation}\n` : ''}` +
-    `📚 *Категория*: ${word.category}\n` +
-    `📊 *Уровень*: ${word.level === 'basic' ? 'базовый' : word.level === 'intermediate' ? 'средний' : 'продвинутый'}`;
+    `🔍 *Пример*: ${word.example}\n` +
+    `${word.exampleTranslation ? `🔍 *Перевод*: ${word.exampleTranslation}\n` : ''}`;
+
+  // Add other forms if available
+  if (word.otherForms) {
+    message += '\n📝 *Другие формы*:\n';
+    for (const [form, value] of Object.entries(word.otherForms)) {
+      message += `- ${form}: ${value}\n`;
+    }
+  }
+
+  // Add usage examples if available
+  if (word.usage && word.usage.length > 0) {
+    message += '\n💡 *Использование*:\n';
+    word.usage.forEach(use => {
+      message += `- ${use}\n`;
+    });
+  }
+
+  message += `\n📚 *Категория*: ${word.category}\n` +
+    `📊 *Уровень*: ${word.level}\n` +
+    `🏷️ *Тема*: ${word.topic}`;
+
+  return message;
 }
 
 /**
