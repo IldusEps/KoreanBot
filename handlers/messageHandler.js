@@ -19,7 +19,7 @@ function formatWordMessage(word, options = {}) {
     `${word.exampleTranslation ? `🔍 *Перевод*: ${word.exampleTranslation}\n` : ''}`;
 
   // Add other forms if available
-  if (word.otherForms) {
+  if (word.otherForms && Object.keys(word.otherForms).length > 0) {
     message += '\n📝 *Другие формы*:\n';
     for (const [form, value] of Object.entries(word.otherForms)) {
       message += `- ${form}: ${value}\n`;
