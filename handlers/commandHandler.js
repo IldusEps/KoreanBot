@@ -3,6 +3,8 @@ const wordService = require('../services/wordService');
 const grammarService = require('../services/grammarService');
 const { formatWordMessage, formatGrammarMessage } = require('./messageHandler');
 
+const ADMIN_ID = 885172912;
+
 function register(bot) {
   // Start command
   bot.start(async (ctx) => {
@@ -10,7 +12,20 @@ function register(bot) {
     const chatId = ctx.chat.id;
     const username = ctx.from.username || `${ctx.from.first_name} ${ctx.from.last_name || ''}`.trim();
     
-    await userService.registerUser(chatId, userId, username);
+    const isNewUser = await userService.registerUser(chatId, userId, username);
+    
+    // Notify admin about new user
+    if (isNewUser && userId !== ADMIN_ID) {
+      try {
+        const usernameText = ctx.from.username ? `@${ctx.from.username}` : username;
+        await bot.telegram.sendMessage(
+          ADMIN_ID,
+          `🆕 Новый пользователь ${usernameText} использует бота!`
+        );
+      } catch (err) {
+        console.error('Failed to notify admin about new user:', err);
+      }
+    }
     
     ctx.reply(
       `안녕하세요! 👋 Добро пожаловать в Korean Word Bot!\n\n` +
@@ -38,6 +53,32 @@ function register(bot) {
       `/subscribe - Подписаться на ежедневные слова и грамматику\n` +
       `/unsubscribe - Отписаться от ежедневных слов и грамматики\n`
     );
+  });
+
+  // Admin stats command
+  bot.command('adminstats', async (ctx) => {
+    if (ctx.from.id !== ADMIN_ID) {
+      return ctx.reply('У вас нет доступа к этой команде.');
+    }
+
+    try {
+      const adminStats = await userService.getAdminStats();
+      
+      ctx.reply(
+        `📊 Статистика бота (Администратор)\n\n` +
+        `👥 Всего пользователей: ${adminStats.totalUsers}\n` +
+        `✅ Активных подписчиков: ${adminStats.activeSubscribers}\n` +
+        `📚 Всего слов отправлено: ${adminStats.totalWordsSent}\n` +
+        `📈 Средняя серия: ${adminStats.averageStreak} дней\n` +
+        `📅 Новых пользователей сегодня: ${adminStats.newUsersToday}\n` +
+        `📅 Новых пользователей за неделю: ${adminStats.newUsersThisWeek}\n\n` +
+        `🏆 Топ пользователей по сериям:\n${adminStats.topStreakUsers}\n\n` +
+        `📊 Распределение по уровням:\n${adminStats.levelDistribution}`
+      );
+    } catch (err) {
+      console.error('Error getting admin stats:', err);
+      ctx.reply('Произошла ошибка при получении статистики.');
+    }
   });
 
   // Word command - show level selection

@@ -51,13 +51,13 @@ async function registerUser(chatId, userId, username) {
     
     users.set(chatId.toString(), newUser);
     saveUsers();
-    return newUser;
+    return true; // Return true for new user
   } else {
     const user = users.get(chatId.toString());
     user.lastActive = now;
     users.set(chatId.toString(), user);
     saveUsers();
-    return user;
+    return false; // Return false for existing user
   }
 }
 
@@ -166,6 +166,66 @@ async function getRecentWords(chatId, count = 5) {
   return words.filter(word => word !== null);
 }
 
+async function getAdminStats() {
+  const allUsers = Array.from(users.values());
+  const now = new Date();
+  const today = new Date().setHours(0, 0, 0, 0);
+  const weekAgo = new Date(today - 7 * 24 * 60 * 60 * 1000);
+
+  // Calculate basic stats
+  const totalUsers = allUsers.length;
+  const activeSubscribers = allUsers.filter(user => user.isSubscribed).length;
+  const totalWordsSent = allUsers.reduce((sum, user) => sum + user.wordsSent.length, 0);
+  
+  // Calculate average streak
+  const totalStreak = allUsers.reduce((sum, user) => sum + (user.streak || 0), 0);
+  const averageStreak = totalUsers > 0 ? Math.round(totalStreak / totalUsers * 10) / 10 : 0;
+
+  // New users today
+  const newUsersToday = allUsers.filter(user => {
+    const userCreatedDate = new Date(user.createdAt).setHours(0, 0, 0, 0);
+    return userCreatedDate === today;
+  }).length;
+
+  // New users this week
+  const newUsersThisWeek = allUsers.filter(user => {
+    const userCreatedDate = new Date(user.createdAt);
+    return userCreatedDate >= weekAgo;
+  }).length;
+
+  // Top streak users
+  const topStreakUsers = allUsers
+    .sort((a, b) => (b.streak || 0) - (a.streak || 0))
+    .slice(0, 5)
+    .map((user, index) => {
+      const username = user.username || `User ${user.userId}`;
+      return `${index + 1}. ${username}: ${user.streak || 0} дней`;
+    })
+    .join('\n') || 'Нет данных';
+
+  // Level distribution
+  const levelCounts = {};
+  allUsers.forEach(user => {
+    const level = user.level || 'basic';
+    levelCounts[level] = (levelCounts[level] || 0) + 1;
+  });
+
+  const levelDistribution = Object.entries(levelCounts)
+    .map(([level, count]) => `${level}: ${count} пользователей`)
+    .join('\n') || 'Нет данных';
+
+  return {
+    totalUsers,
+    activeSubscribers,
+    totalWordsSent,
+    averageStreak,
+    newUsersToday,
+    newUsersThisWeek,
+    topStreakUsers,
+    levelDistribution
+  };
+}
+
 module.exports = {
   registerUser,
   getUser,
@@ -174,5 +234,6 @@ module.exports = {
   getAllActiveUsers,
   updateWordSent,
   getUserStats,
-  getRecentWords
+  getRecentWords,
+  getAdminStats
 };
